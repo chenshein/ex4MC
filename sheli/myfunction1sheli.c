@@ -47,7 +47,7 @@ static pixel applyKernel(pixel *src, pixel *dst, int kernel[3][3], int kernelSca
 			pixel p = src[index - 1];
 			zred = ((int) p.red);
 			zgreen = ((int) p.green);
-			zblue = ((int) p.blue);
+			zblue =  ((int) p.blue);
 
 			// for i-1 and j
 

@@ -5,21 +5,12 @@
 #include <string.h>
 
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MN (m * n)
 #define MN3 ((MN<<1)+MN)
 #define INDEX(i,j) ((i)*m+(j))
 #define limit (n-1)
+#define CLAMP(x, low, high) ((x) < (low) ? (low) : ((x) > (high) ? (high) : (x)))
 
-/*
- * initialize_pixel_sum - Initializes all fields of sum to 0
- */
-void initialize_pixel_sum(pixel_sum *sum) {
-        sum->red =0;
-        sum->green =0;
-        sum->blue = 0;
-}
 
 /*
  * assign_sum_to_pixel - Truncates pixel's new value to match the range [0,255]
@@ -31,58 +22,65 @@ static void assign_sum_to_pixel(pixel *current_pixel, pixel_sum sum, int kernelS
     sum.green *= x;
     sum.blue *= x;
     // truncate each pixel's color values to match the range [0,255]
-    current_pixel->red = (unsigned char) (MIN(MAX(sum.red, 0), 255));
-    current_pixel->green = (unsigned char) (MIN(MAX(sum.green, 0), 255));
-    current_pixel->blue = (unsigned char) (MIN(MAX(sum.blue, 0), 255));
+    current_pixel->red = CLAMP(sum.red, 0, 255);
+    current_pixel->green = CLAMP(sum.green, 0, 255);
+    current_pixel->blue = CLAMP(sum.blue, 0, 255);
 }
 
 /*
 * sum_pixels_by_weight - Sums pixel values, scaled by given weight
 */
 static void sum_pixels_by_weight(pixel_sum *sum, pixel p, int weight) {
-    sum->red += p.red *weight;
-    sum->green += p.green *weight;
-    sum->blue += p.blue *weight;
+    sum->red += p.red * weight;
+    sum->green += p.green * weight;
+    sum->blue += p.blue * weight;
 }
-
 /*
  *  Applies kernel for pixel at (i,j)
  */
 static pixel applyKernel(int i, int j, pixel *src, int kernel[3][3], int kernelScale, bool filter) {
     register int ii = i-1,jj=j-1;
     int runI = i + 1,runJ = j + 1,iiTemp = ii,jjTemp = jj;
-    pixel_sum sum;
-    pixel current_pixel;
     int min_intensity = 766; // arbitrary value that is higher than maximum possible intensity, which is 255*3=765
     int max_intensity = -1; // arbitrary value that is lower than minimum possible intensity, which is 0
     int min_row, min_col, max_row, max_col,kRow, kCol;
-    register int index = ii*m;
-    initialize_pixel_sum(&sum);
-    while (ii<=runI){
+    register int index1 = ii*m;
+    register int sumRed=0,sumBlue=0,sumGreen=0;
+    pixel_sum sum;
+    pixel current_pixel;
+    kRow = 0;
+    for(;ii<=runI;++ii){
+        kCol = 0;
         // compute row index in kernel
-        kRow = ii - i + 1;
         int* row = kernel[kRow];
         jj=jjTemp;
-        while (jj<=runJ){
-            // compute column index in kernel
-            kCol = jj - j + 1;
+        for(;jj<=runJ;++jj){
             // apply kernel on pixel at [ii,jj]
-            sum_pixels_by_weight(&sum, src[index+jj], row[kCol]);
-            ++jj;
+            pixel temp= src[index1+jj];
+            int weight = row[kCol];
+            sumRed+= temp.red * weight;
+            sumBlue+= temp.blue * weight;
+            sumGreen += temp.green * weight;
+            kCol+=1;
         }
-        index+=m;
-        ++ii;
+        kRow+=1;
+        index1+=m;
     }
+    sum.red=sumRed;
+    sum.blue=sumBlue;
+    sum.green=sumGreen;
     ii = iiTemp;
+    index1 = ii*m;
+    int colorSum;
     if (filter) {
         pixel loop_pixel;
         // find min and max coordinates
-        while (ii<=runI){
+        for(;ii<=runI;++ii){
             jj=jjTemp;
-            while (jj<=runJ){
+            for(;jj<=runJ;++jj){
                 // check if smaller than min or higher than max and update
-                loop_pixel = src[INDEX(ii,jj)];
-                int colorSum =(loop_pixel.red & 0xff) +  (loop_pixel.green&0xff) + (loop_pixel.blue & 0xff);
+                loop_pixel = src[index1+jj];
+                colorSum =(loop_pixel.red & 0xff) +  (loop_pixel.green&0xff) + (loop_pixel.blue & 0xff);
                 if (colorSum <= min_intensity) {
                     min_intensity = colorSum;
                     min_row = ii;
@@ -93,9 +91,8 @@ static pixel applyKernel(int i, int j, pixel *src, int kernel[3][3], int kernelS
                     max_row = ii;
                     max_col = jj;
                 }
-                ++jj;
             }
-            ++ii;
+            index1+=m;
         }
         // filter out min and max
         sum_pixels_by_weight(&sum, src[INDEX(min_row,min_col)], -1);
@@ -113,16 +110,17 @@ static pixel applyKernel(int i, int j, pixel *src, int kernel[3][3], int kernelS
 * column index smaller than 3/2
 */
 void smooth(pixel *src, pixel *dst, int kernel[3][3], int kernelScale, bool filter) {
-    register int i= 1; //kernel size always 3 and 3/2 in int is 1
+    register int i= 1,j; //kernel size always 3 and 3/2 in int is 1
     register int index = m;
     for (; i <limit ; ++i) {
-        register int j = 1;
+        j = 1;
         for (; j < limit; ++j) {
             dst[index+j] = applyKernel(i, j, src, kernel, kernelScale, filter);
         }
         index+=m;
     }
 }
+
 
 void doConvolution(Image *image, int kernel[3][3], int kernelScale,bool filter) {
     pixel* pixelsImg = malloc(MN3);

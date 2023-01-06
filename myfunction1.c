@@ -42,27 +42,27 @@ static void sum_pixels_by_weight(pixel_sum *sum, pixel p, int weight) {
  */
 static pixel applyKernel(int i, int j, pixel *src, int kernelScale, bool filter) {
     // Use local variables instead of global variables
-    register int ii = i-1, jj = j-1;
+    int ii = i-1, jj = j-1;
     int runI = i + 1, runJ = j + 1;
     int min_intensity = 766; // arbitrary value that is higher than maximum possible intensity, which is 255*3=765
-    int max_intensity = -1; // arbitrary value that is lower than minimum possible intensity, which is 0
     int min_row, min_col, max_row, max_col,kRow,kCol,iim,iiRow;
-    register int sumRed=0, sumBlue=0, sumGreen=0;
+    int sumRed=0, sumBlue=0, sumGreen=0;
     pixel_sum sum;
     pixel current_pixel;
 
     // Precompute the kernel sum
     for (kRow = 0; kRow < 3; ++kRow) {
-        int *row = kernel[kRow];
-        int calc = m*(ii+kRow)+jj;
+        register int *row = kernel[kRow];
+        register int calc = m*(ii+kRow)+jj;
         for (kCol = 0; kCol < 3; ++kCol) {
-            int weight = row[kCol];
-            pixel temp = src[calc+kCol];
+            register int weight = row[kCol];
+            register pixel temp = src[calc+kCol];
             sumRed += temp.red * weight;
             sumBlue += temp.blue * weight;
             sumGreen += temp.green * weight;
         }
     }
+    int max_intensity = -1; // arbitrary value that is lower than minimum possible intensity, which is 0
     sum.red = sumRed;
     sum.blue = sumBlue;
     sum.green = sumGreen;
@@ -107,7 +107,7 @@ static pixel applyKernel(int i, int j, pixel *src, int kernelScale, bool filter)
 void smooth(pixel *src, pixel *dst, int kernelScale, bool filter) {
     int i= 1,j; //kernel size always 3 and 3/2 in int is 1
     int index = m;
-    for (; i <limit ; ++i) {
+    for (; i < limit ; ++i) {
         j = 1;
         for (; j < limit; ++j) {
             dst[index+j] = applyKernel(i, j, src, kernelScale, filter);

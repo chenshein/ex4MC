@@ -85,16 +85,16 @@ static pixel applyKernel(int i, int j, pixel *src) {
                 // check if smaller than min or higher than max and update
                 loop_pixel = src[index1+jj];
                 colorSum =(loop_pixel.red & 0xff) +  (loop_pixel.green&0xff) + (loop_pixel.blue & 0xff);
-                if (colorSum <= min_intensity) {
-                    min_intensity = colorSum;
-                    min_row = ii;
-                    min_col = jj;
-                }
-                if (colorSum > max_intensity) {
-                    max_intensity = colorSum;
-                    max_row = ii;
-                    max_col = jj;
-                }
+
+                min_row = (colorSum <= min_intensity) ? ii : min_row;
+                min_col = (colorSum <= min_intensity) ? jj : min_col;
+                min_intensity = (colorSum <= min_intensity) ? colorSum : min_intensity;
+
+                max_row = (colorSum > max_intensity) ? ii : max_row;
+                max_col = (colorSum > max_intensity) ? jj : max_col;
+                max_intensity = (colorSum > max_intensity) ? colorSum : max_intensity;
+
+
             }
             index1+=m;
         }

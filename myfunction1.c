@@ -34,10 +34,10 @@ static void assign_sum_to_pixel(pixel *current_pixel, pixel_sum sum) {
 /*
 * sum_pixels_by_weight - Sums pixel values, scaled by given weight
 */
-static void sum_pixels_by_weight(pixel_sum *sum, pixel p, int weight) {
-    sum->red += p.red * weight;
-    sum->green += p.green * weight;
-    sum->blue += p.blue * weight;
+static void sum_pixels_by_weight(pixel_sum *sum, pixel p) {
+    sum->red -= p.red;
+    sum->green -= p.green;
+    sum->blue -= p.blue;
 }
 /*
  *  Applies kernel for pixel at (i,j)
@@ -99,8 +99,8 @@ static pixel applyKernel(int i, int j, pixel *src) {
             index1+=m;
         }
         // filter out min and max
-        sum_pixels_by_weight(&sum, src[INDEX(min_row,min_col)], -1);
-        sum_pixels_by_weight(&sum, src[INDEX(max_row,max_col)], -1);
+        sum_pixels_by_weight(&sum, src[INDEX(min_row,min_col)]);
+        sum_pixels_by_weight(&sum, src[INDEX(max_row,max_col)]);
     }
 
     // assign kernel's result to pixel at [i,j]

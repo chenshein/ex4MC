@@ -35,7 +35,6 @@ void myfunction(Image *image, char* srcImgpName, char* blurRsltImgName, char* sh
     * [0, 0, 0]
     */
     int rowSharpKernel[3][3] = {{0, 0, 0},{-2,6,-2},{0, 0, 0}};
-
     // change it to switch case, so we don't need to check each if condition, here we go to the wanted condition
     // and end the case by goto done because there is no need to continue
     switch (flag) {

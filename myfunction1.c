@@ -4,13 +4,14 @@
 #include "showBMP.h"
 #include <string.h>
 
-
+// define marco
 #define MN (m * n)
 #define MN3 ((MN<<1)+MN)
 #define INDEX(i,j) ((i)*m+(j))
-#define limit (n-1)
+#define limit (m-1)
 #define CLAMP(x, low, high) ((x) < (low) ? (low) : ((x) > (high) ? (high) : (x)))
 
+//global values
 int kernelScale;
 bool filter;
 int kernel[3][3];
@@ -32,7 +33,7 @@ static void assign_sum_to_pixel(pixel *current_pixel, pixel_sum sum) {
 }
 
 /*
-* sum_pixels_by_weight - Sums pixel values, scaled by given weight
+* sum_pixels_by_weight - Sums pixel values, scaled by given weight which is -1
 */
 static void sum_pixels_by_weight(pixel_sum *sum, pixel p) {
     sum->red -= p.red;
@@ -43,16 +44,15 @@ static void sum_pixels_by_weight(pixel_sum *sum, pixel p) {
  *  Applies kernel for pixel at (i,j)
  */
 static pixel applyKernel(int i, int j, pixel *src) {
-    register int ii = i-1,jj=j-1;
+    //Declaration of variables
+    register int ii = i-1,jj=j-1,sumRed=0,sumBlue=0,sumGreen=0;
     int runI = i + 1,runJ = j + 1,iiTemp = ii,jjTemp = jj;
     int min_intensity = 766; // arbitrary value that is higher than maximum possible intensity, which is 255*3=765
     int max_intensity = -1; // arbitrary value that is lower than minimum possible intensity, which is 0
-    int min_row, min_col, max_row, max_col,kRow, kCol;
+    int min_row, min_col, max_row, max_col,kRow=0, kCol,weight;
     register int index1 = ii*m;
-    register int sumRed=0,sumBlue=0,sumGreen=0;
     pixel_sum sum;
-    pixel current_pixel;
-    kRow = 0;
+    pixel current_pixel,temp;
     for(;ii<=runI;++ii){
         kCol = 0;
         // compute row index in kernel
@@ -60,8 +60,9 @@ static pixel applyKernel(int i, int j, pixel *src) {
         jj=jjTemp;
         for(;jj<=runJ;++jj){
             // apply kernel on pixel at [ii,jj]
-            pixel temp= src[index1+jj];
-            int weight = row[kCol];
+            temp= src[index1+jj];
+            weight = row[kCol];
+            //sum_pixels_by_weight
             sumRed+= temp.red * weight;
             sumBlue+= temp.blue * weight;
             sumGreen += temp.green * weight;
@@ -70,22 +71,24 @@ static pixel applyKernel(int i, int j, pixel *src) {
         kRow+=1;
         index1+=m;
     }
+    //apply sum of the color to sum
     sum.red=sumRed;
     sum.blue=sumBlue;
     sum.green=sumGreen;
+    // initialization for 'for' loop
     ii = iiTemp;
     index1 = ii*m;
     int colorSum;
     if (filter) {
         pixel loop_pixel;
-        // find min and max coordinates
         for(;ii<=runI;++ii){
             jj=jjTemp;
             for(;jj<=runJ;++jj){
-                // check if smaller than min or higher than max and update
                 loop_pixel = src[index1+jj];
+                //calculate color sum in order noe to calculate it in every if condition
                 colorSum =(loop_pixel.red & 0xff) +  (loop_pixel.green&0xff) + (loop_pixel.blue & 0xff);
-
+                /* check if smaller than min or higher than max and update.if we leave the original condition,
+                 * in the assembly translation it will be a condition with a jump and here it is a placement*/
                 min_row = (colorSum <= min_intensity) ? ii : min_row;
                 min_col = (colorSum <= min_intensity) ? jj : min_col;
                 min_intensity = (colorSum <= min_intensity) ? colorSum : min_intensity;
@@ -93,10 +96,9 @@ static pixel applyKernel(int i, int j, pixel *src) {
                 max_row = (colorSum > max_intensity) ? ii : max_row;
                 max_col = (colorSum > max_intensity) ? jj : max_col;
                 max_intensity = (colorSum > max_intensity) ? colorSum : max_intensity;
-
-
             }
             index1+=m;
+
         }
         // filter out min and max
         sum_pixels_by_weight(&sum, src[INDEX(min_row,min_col)]);
@@ -115,8 +117,8 @@ static pixel applyKernel(int i, int j, pixel *src) {
 */
 void smooth(pixel *src, pixel *dst) {
     int i= 1,j; //kernel size always 3 and 3/2 in int is 1
-    int index = m;
-    for (; i < limit ; ++i) {
+    int index = m; // in order not to calculate dst index every time
+    for (; i < limit ; ++i) { //limit = m-1 (which is dim - kernelSize / 2)
         j = 1;
         for (; j < limit; ++j) {
             dst[index+j] = applyKernel(i, j, src);
@@ -126,13 +128,17 @@ void smooth(pixel *src, pixel *dst) {
 }
 
 void doConvolution(Image *image, int tmpKernel[3][3], int kernelScale1,bool filter1) {
+    // initialization global vals
     kernelScale = kernelScale1;
     filter=filter1;
     unsigned long mn3 = MN3;
+    //kernel(global)=tempKernel
     memcpy(kernel, tmpKernel, 36);
     pixel* pixelsImg = malloc(mn3);
+    //charsToPixels
     memcpy(pixelsImg, image->data, mn3);
     smooth((pixel*)image->data, pixelsImg);
+    //pixelsToChars
     memcpy(image->data, pixelsImg, mn3);
     free(pixelsImg);
 }

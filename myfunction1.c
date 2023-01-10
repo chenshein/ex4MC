@@ -4,7 +4,7 @@
 #include "showBMP.h"
 #include <string.h>
 
-/ define marco
+// define marco
 #define MN (m * n) //define marco to multiply m and n, MN is used in some other macros
 #define MN3 ((MN<<1)+MN) //define marco for MN3, it used for malloc
 #define INDEX(i,j) ((i)*m+(j)) //define marco to calculate the index of a pixel given its i and j

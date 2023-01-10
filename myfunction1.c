@@ -56,19 +56,19 @@ static pixel applyKernelRowSharp(int i, int j, pixel *src) {
     // goes throw kernel to calcu weight in order to insert red,blue,green in sum
     temp= src[index1+jj];
     //sum_pixels_by_weight
-    sumRed += temp.red * (-2);
-    sumBlue += temp.blue * (-2);
-    sumGreen += temp.green * (-2);
+    sumRed -= temp.red<<1;
+    sumBlue -= temp.blue<<1;
+    sumGreen -= temp.green<<1;
     temp= src[index1+jj+1];
     //sum_pixels_by_weight
-    sumRed += temp.red * 6;
-    sumBlue += temp.blue * 6;
-    sumGreen += temp.green * 6;
+    sumRed += (temp.red<<2)+(temp.red<<1);
+    sumBlue += (temp.blue<<2)+(temp.blue<<1);
+    sumGreen += (temp.green<<2)+(temp.green<<1);
     temp= src[index1+jj+2];
     //sum_pixels_by_weight
-    sumRed += temp.red * (-2);
-    sumBlue += temp.blue * (-2);
-    sumGreen += temp.green * (-2);
+    sumRed -= temp.red<<1;
+    sumBlue -= temp.blue<<1;
+    sumGreen -= temp.green<<1;
 
     //apply sum of the color to sum
     sum.red=sumRed;
@@ -113,9 +113,9 @@ static pixel applyKernelSharp(int i, int j, pixel *src) {
     sum.green-= temp.green ;
     temp = src[index1+j];
     //sum_pixels_by_weight
-    sum.red+= temp.red * 9;
-    sum.blue+= temp.blue * 9;
-    sum.green+= temp.green * 9;
+    sum.red+= (temp.red<<3)+temp.red;
+    sum.blue+= (temp.blue<<3)+temp.blue;
+    sum.green+= (temp.green<<3)+temp.green;
     temp = src[index1+j+1];
     //sum_pixels_by_weight
     sum.red-= temp.red ;
@@ -144,7 +144,6 @@ static pixel applyKernelSharp(int i, int j, pixel *src) {
 
 }
 
-
 /*
  * kernel = [0, 0, 0]
             [1, 2, 1]
@@ -160,19 +159,19 @@ static pixel applyKernelRowBlur(int i, int j, pixel *src) {
 // goes throw kernel to calcu weight in order to insert red,blue,green in sum
     temp = src[index1+jj];
     //sum_pixels_by_weight
-    sumRed += temp.red * 1;
-    sumBlue += temp.blue * 1;
-    sumGreen += temp.green * 1;
+    sumRed += temp.red;
+    sumBlue += temp.blue;
+    sumGreen += temp.green ;
     temp = src[index1+jj+1];
     //sum_pixels_by_weight
-    sumRed += temp.red * 2;
-    sumBlue += temp.blue * 2;
-    sumGreen += temp.green * 2;
+    sumRed += temp.red<<1;
+    sumBlue += temp.blue<<1;
+    sumGreen += temp.green<<1;
     temp = src[index1+jj+2];
     //sum_pixels_by_weight
-    sumRed += temp.red * 1;
-    sumBlue += temp.blue * 1;
-    sumGreen += temp.green * 1;
+    sumRed += temp.red;
+    sumBlue += temp.blue ;
+    sumGreen += temp.green ;
 
     //apply sum of the color to sum
     sum.red=sumRed;
